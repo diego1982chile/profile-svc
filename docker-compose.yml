@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  profile-service:
+    build:
+      context: target/quarkus-app
+      dockerfile: ${PWD}/src/main/docker/Dockerfile.local
+    container_name: container_profile-service
+    ports:
+      - "9092:8080"
+      - "8012:8000"
+    environment:
+      QUARKUS_PROFILE: docker
+      JAVA_DEBUG: "true"
+      JAVA_DEBUG_PORT: "*:8000"
+      PROFILE_FIXTURES_ENABLED: ${PROFILE_FIXTURES_ENABLED:-true}
+      PROFILE_MEDIA_STORAGE_PROVIDER: ${PROFILE_MEDIA_STORAGE_PROVIDER:-fake}
+      PROFILE_MEDIA_FAKE_UPLOAD_BASE_URL: ${PROFILE_MEDIA_FAKE_UPLOAD_BASE_URL:-https://storage.local/upload}
+      PROFILE_MEDIA_UPLOAD_URL_TTL: ${PROFILE_MEDIA_UPLOAD_URL_TTL:-15m}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:8088,http://127.0.0.1:8088}
+    volumes:
+      - ${PWD}/db/profile.db:/deployments/profile.db
