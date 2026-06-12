@@ -10,7 +10,7 @@ public record Profile(
         String description,
         Integer age,
         LocalDate birthDate,
-        String location,
+        Commune commune,
         PublicationStatus publicationStatus,
         AgeVerificationStatus ageVerificationStatus,
         Long storageQuota,

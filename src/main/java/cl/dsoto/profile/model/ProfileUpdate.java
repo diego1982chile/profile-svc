@@ -8,8 +8,23 @@ public record ProfileUpdate(
         String description,
         Integer age,
         LocalDate birthDate,
-        String location,
+        String countryCode,
+        String regionCode,
+        String communeCode,
         List<OfferedService> services,
         List<Rate> rates
 ) {
+    public ProfileUpdate {
+        countryCode = blankToNull(countryCode);
+        regionCode = blankToNull(regionCode);
+        communeCode = blankToNull(communeCode);
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
+    }
 }

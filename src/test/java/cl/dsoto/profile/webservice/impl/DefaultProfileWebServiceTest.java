@@ -72,7 +72,9 @@ class DefaultProfileWebServiceTest {
                         "displayName", "Provider After",
                         "description", "Updated description",
                         "age", 31,
-                        "location", "Valparaiso",
+                        "countryCode", "CL",
+                        "regionCode", "05",
+                        "communeCode", "05101",
                         "services", List.of(
                                 Map.of("name", "Massage", "description", "Relax", "active", true),
                                 Map.of("name", "Video Call", "description", "Remote", "active", true)
@@ -95,7 +97,11 @@ class DefaultProfileWebServiceTest {
                 .statusCode(200)
                 .body("displayName", is("Provider After"))
                 .body("description", is("Updated description"))
-                .body("location", is("Valparaiso"))
+                .body("commune.countryCode", is("CL"))
+                .body("commune.region.regionCode", is("05"))
+                .body("commune.region.name", is("Valparaíso"))
+                .body("commune.communeCode", is("05101"))
+                .body("commune.name", is("Valparaíso"))
                 .body("services", hasSize(2))
                 .body("rates", hasSize(1));
     }
@@ -130,7 +136,9 @@ class DefaultProfileWebServiceTest {
                 "displayName", displayName,
                 "description", "Profile description",
                 "age", 29,
-                "location", "Santiago",
+                "countryCode", "CL",
+                "regionCode", "13",
+                "communeCode", "13101",
                 "services", List.of(
                         Map.of("name", "Massage", "description", "Relax", "active", true)
                 ),

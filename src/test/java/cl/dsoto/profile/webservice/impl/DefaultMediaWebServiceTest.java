@@ -39,6 +39,7 @@ class DefaultMediaWebServiceTest {
                 .body("mediaType", is("PHOTO"))
                 .body("mediaStatus", is("AVAILABLE"))
                 .body("storageKey", is(storageKey))
+                .body("url", is("http://localhost:9092/profile-service/media/files/" + storageKey))
                 .body("fileSize", is(1000))
                 .body("displayOrder", is(1))
                 .body("primaryMedia", is(true));
@@ -50,7 +51,8 @@ class DefaultMediaWebServiceTest {
                 .then()
                 .statusCode(200)
                 .body("", hasSize(1))
-                .body("[0].storageKey", is(storageKey));
+                .body("[0].storageKey", is(storageKey))
+                .body("[0].url", is("http://localhost:9092/profile-service/media/files/" + storageKey));
     }
 
     @Test
@@ -189,7 +191,9 @@ class DefaultMediaWebServiceTest {
                 "displayName", displayName,
                 "description", "Profile description",
                 "age", 29,
-                "location", "Santiago",
+                "countryCode", "CL",
+                "regionCode", "13",
+                "communeCode", "13101",
                 "services", List.of(
                         Map.of("name", "Massage", "description", "Relax", "active", true)
                 ),

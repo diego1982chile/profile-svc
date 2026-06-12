@@ -73,7 +73,17 @@ Current profile fields:
   "description": "Perfil base creado desde fixture de onboarding.",
   "age": 30,
   "birthDate": "1996-03-12",
-  "location": "Santiago",
+  "commune": {
+    "countryCode": "CL",
+    "regionCode": "13",
+    "communeCode": "13101",
+    "name": "Santiago Centro",
+    "region": {
+      "countryCode": "CL",
+      "regionCode": "13",
+      "name": "Metropolitana de Santiago"
+    }
+  },
   "publicationStatus": "DRAFT",
   "ageVerificationStatus": "NOT_STARTED",
   "storageQuota": 524288000,
@@ -91,7 +101,9 @@ Create/update request shape:
   "description": "Descripción pública",
   "age": 30,
   "birthDate": "1996-03-12",
-  "location": "Santiago",
+  "countryCode": "CL",
+  "regionCode": "13",
+  "communeCode": "13101",
   "services": [
     {
       "serviceId": null,
@@ -120,6 +132,9 @@ Notes:
 
 - `birthDate` was added for the intended onboarding basic-profile step.
 - `age` still exists for compatibility.
+- `commune` is the normalized administrative location for a profile.
+  `Region` is derived from `Commune`; profile does not duplicate region or
+  commune names.
 - Fixture profiles start as `DRAFT`.
 - `GET /public/profiles/{profileId}` only returns profiles with
   `publicationStatus=PUBLISHED`.
@@ -180,6 +195,7 @@ Media response:
   "mediaType": "PHOTO",
   "mediaStatus": "AVAILABLE",
   "storageKey": "profiles/{profileId}/photo/{uuid}",
+  "url": "http://localhost:9092/profile-service/media/files/profiles/{profileId}/photo/{uuid}",
   "fileSize": 1000,
   "displayOrder": 1,
   "primaryMedia": true,
@@ -195,24 +211,60 @@ VIDEO max count: 5
 Total storage quota: 500 MB
 ```
 
-## Fake Storage Behavior
+## Local Storage Behavior
 
-`profile.media.storage.provider=fake` is currently used.
+`profile.media.storage.provider=local` is used by dev and Docker profiles.
 
-The fake storage implementation:
+The local storage implementation:
 
-- returns an upload intent,
-- records expected metadata internally,
-- does not expose a real binary upload endpoint,
-- allows `POST /media/confirm` to succeed using the returned `storageKey`.
+- returns an upload intent with method `PUT`,
+- accepts the binary upload at the returned `uploadUrl`,
+- stores files under `storage/profile-media`,
+- serves files through `GET /media/files/{storageKey}`,
+- allows `POST /media/confirm` only after the uploaded object exists.
+- returns `url` in media responses so the UI can render persisted files after
+  page reloads.
 
-For UI development, while storage provider is `fake`:
+For UI development:
 
 1. Call `POST /media/upload-url`.
-2. Skip or mock the actual `PUT uploadUrl`.
+2. Upload the selected file with `PUT uploadUrl` and the returned
+   `Content-Type` header.
 3. Call `POST /media/confirm` with the returned `storageKey`.
 
-This preserves the future cloud-storage flow without requiring S3 or LocalStack.
+The `fake` provider still exists for backend tests. It does not store binary
+files and should not be used when the UI needs previews of real uploads.
+
+## Location Catalog
+
+The backend exposes a Chile location catalog for profile forms.
+
+Regions:
+
+```http
+GET /locations/regions?countryCode=CL
+```
+
+Communes by region:
+
+```http
+GET /locations/regions/{regionCode}/communes?countryCode=CL
+```
+
+Region and commune codes use the Chilean DPA/CUT codes from Gobierno Digital's
+public DPA API. The catalog is seeded locally from `data/chile-communes.csv`,
+so the UI should not hardcode regions or communes.
+
+Domain convention:
+
+```text
+Profile -> Commune -> Region
+```
+
+Do not introduce `ProfileLocation`, `LocationCommune`, or `LocationRegion` for
+the current scope. Service modalities such as online, hotel, out-call, or
+to-agree are separate profile attributes and are not part of the administrative
+location model yet.
 
 ## Out Of Scope For Initial UI
 

@@ -37,7 +37,7 @@ GET /public/profiles/{profileId}
 Profiles currently support:
 
 - Basic public data: `displayName`, `description`, `age`, `birthDate`,
-  `location`.
+  `commune`.
 - Publication status: `DRAFT`, `PUBLISHED`, `SUSPENDED`.
 - Age verification status: `NOT_STARTED`, `PENDING`, `VERIFIED`, `REJECTED`.
 - Storage quota and usage.
@@ -73,21 +73,27 @@ Storage is behind:
 MediaStorageService
 ```
 
-Current implementation:
+Current implementations:
 
 ```java
 FakeMediaStorageService
+LocalMediaStorageService
 ```
 
-It is selected by:
+They are selected by:
 
 ```properties
 profile.media.storage.provider=fake
+profile.media.storage.provider=local
 ```
 
-This implementation does not receive binary uploads. It records expected
-metadata after generating an upload intent so the UI can develop the flow before
-S3 or LocalStack is integrated.
+`local` is used by dev and Docker profiles. It receives binary uploads through
+the service, stores files under `storage/profile-media`, serves them over HTTP,
+and lets `POST /media/confirm` validate real file metadata.
+
+`fake` remains available for tests and fast integration flows that do not need
+binary uploads. It records expected metadata in memory after generating an
+upload intent.
 
 ### Fixtures
 
@@ -120,6 +126,37 @@ quarkus.datasource.jdbc.url=jdbc:sqlite:profile.db
 ```
 
 Test profile uses H2 in memory.
+
+### Location Catalog
+
+The service includes a Chile regions/communes catalog seeded from:
+
+```text
+src/main/resources/data/chile-communes.csv
+```
+
+The source dataset was generated from Gobierno Digital's public DPA API:
+
+```text
+https://api.digital.gob.cl/dpa/regiones
+```
+
+Available endpoints:
+
+```http
+GET /locations/regions?countryCode=CL
+GET /locations/regions/{regionCode}/communes?countryCode=CL
+```
+
+Profile location follows the normalized model:
+
+```text
+Profile -> Commune -> Region
+```
+
+The profile stores a commune reference. Region and display names come from the
+catalog and are not duplicated on the profile. Service modalities such as
+online, hotel, out-call, or to-agree are a separate future concept.
 
 ### Docker
 

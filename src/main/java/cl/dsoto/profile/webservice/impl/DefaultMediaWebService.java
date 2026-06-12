@@ -17,6 +17,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
 
@@ -29,6 +30,9 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class DefaultMediaWebService implements MediaWebService {
 
     private final MediaService mediaService;
+
+    @ConfigProperty(name = "profile.media.local-public-base-url")
+    String mediaBaseUrl;
 
     public DefaultMediaWebService(MediaService mediaService) {
         this.mediaService = mediaService;
@@ -65,7 +69,7 @@ public class DefaultMediaWebService implements MediaWebService {
     ) {
         try {
             return Response.status(Response.Status.CREATED)
-                    .entity(MediaResource.from(mediaService.confirmUpload(userId, request.toConfirmation())))
+                    .entity(MediaResource.from(mediaService.confirmUpload(userId, request.toConfirmation()), mediaBaseUrl))
                     .build();
         } catch (IllegalStateException exception) {
             return Response.status(Response.Status.CONFLICT)
@@ -84,7 +88,7 @@ public class DefaultMediaWebService implements MediaWebService {
     public Response getMyMedia(@HeaderParam("X-User-Id") String userId) {
         try {
             return Response.ok(mediaService.getMedia(userId).stream()
-                    .map(MediaResource::from)
+                    .map(media -> MediaResource.from(media, mediaBaseUrl))
                     .toList()).build();
         } catch (IllegalArgumentException exception) {
             return Response.status(Response.Status.BAD_REQUEST)

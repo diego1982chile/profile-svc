@@ -12,23 +12,35 @@ public record MediaResource(
         MediaType mediaType,
         MediaStatus mediaStatus,
         String storageKey,
+        String url,
         Long fileSize,
         Integer displayOrder,
         boolean primaryMedia,
         Instant uploadedAt
 ) {
 
-    public static MediaResource from(Media media) {
+    public static MediaResource from(Media media, String mediaBaseUrl) {
         return new MediaResource(
                 media.mediaId(),
                 media.profileId(),
                 media.mediaType(),
                 media.mediaStatus(),
                 media.storageKey(),
+                mediaUrl(mediaBaseUrl, media.storageKey()),
                 media.fileSize(),
                 media.displayOrder(),
                 media.primaryMedia(),
                 media.uploadedAt()
         );
+    }
+
+    private static String mediaUrl(String mediaBaseUrl, String storageKey) {
+        if (mediaBaseUrl == null || mediaBaseUrl.isBlank() || storageKey == null || storageKey.isBlank()) {
+            return null;
+        }
+
+        return mediaBaseUrl.endsWith("/")
+                ? mediaBaseUrl + storageKey
+                : mediaBaseUrl + "/" + storageKey;
     }
 }

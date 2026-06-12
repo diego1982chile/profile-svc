@@ -1,13 +1,16 @@
 package cl.dsoto.profile.services.impl;
 
+import cl.dsoto.profile.entities.CommuneEntity;
 import cl.dsoto.profile.entities.OfferedServiceEntity;
 import cl.dsoto.profile.entities.ProfileEntity;
 import cl.dsoto.profile.entities.RateEntity;
+import cl.dsoto.profile.mappers.ProfileMapper;
 import cl.dsoto.profile.model.OfferedService;
 import cl.dsoto.profile.model.Profile;
 import cl.dsoto.profile.model.ProfileUpdate;
 import cl.dsoto.profile.model.PublicationStatus;
 import cl.dsoto.profile.model.Rate;
+import cl.dsoto.profile.repositories.CommuneRepository;
 import cl.dsoto.profile.repositories.ProfileRepository;
 import cl.dsoto.profile.services.ProfileService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -24,12 +27,20 @@ import java.util.stream.Collectors;
 public class DefaultProfileService implements ProfileService {
 
     private final ProfileRepository profileRepository;
+    private final CommuneRepository communeRepository;
+    private final ProfileMapper profileMapper;
 
     @ConfigProperty(name = "profile.media.default-storage-quota-bytes")
     Long defaultStorageQuota;
 
-    public DefaultProfileService(ProfileRepository profileRepository) {
+    public DefaultProfileService(
+            ProfileRepository profileRepository,
+            CommuneRepository communeRepository,
+            ProfileMapper profileMapper
+    ) {
         this.profileRepository = profileRepository;
+        this.communeRepository = communeRepository;
+        this.profileMapper = profileMapper;
     }
 
     @Override
@@ -45,14 +56,14 @@ public class DefaultProfileService implements ProfileService {
         profile.setStorageQuota(defaultStorageQuota);
         apply(profile, profileUpdate);
 
-        return toModel(profileRepository.save(profile));
+        return profileMapper.toModel(profileRepository.save(profile));
     }
 
     @Override
     @Transactional
     public Optional<Profile> getProfileByUserId(String userId) {
         validateUserId(userId);
-        return profileRepository.findByUserId(userId).map(this::toModel);
+        return profileRepository.findByUserId(userId).map(profileMapper::toModel);
     }
 
     @Override
@@ -63,7 +74,7 @@ public class DefaultProfileService implements ProfileService {
                 .orElseThrow(() -> new IllegalArgumentException("profile not found"));
 
         apply(profile, profileUpdate);
-        return toModel(profileRepository.save(profile));
+        return profileMapper.toModel(profileRepository.save(profile));
     }
 
     @Override
@@ -75,7 +86,7 @@ public class DefaultProfileService implements ProfileService {
 
         return profileRepository.findById(profileId)
                 .filter(profile -> profile.getPublicationStatus() == PublicationStatus.PUBLISHED)
-                .map(this::toModel);
+                .map(profileMapper::toModel);
     }
 
     private void validateUserId(String userId) {
@@ -89,13 +100,32 @@ public class DefaultProfileService implements ProfileService {
             throw new IllegalArgumentException("profile update is required");
         }
 
-        profile.setDisplayName(update.displayName());
-        profile.setDescription(update.description());
-        profile.setAge(update.age());
-        profile.setBirthDate(update.birthDate());
-        profile.setLocation(update.location());
+        profileMapper.updateEntity(update, profile);
+        profile.setCommune(resolveCommune(update));
         replaceServices(profile, update.services());
         replaceRates(profile, update.rates());
+    }
+
+    private CommuneEntity resolveCommune(ProfileUpdate update) {
+        if (update.countryCode() == null && update.regionCode() == null && update.communeCode() == null) {
+            return null;
+        }
+
+        String countryCode = update.countryCode() == null ? "CL" : update.countryCode();
+        if (update.regionCode() == null) {
+            throw new IllegalArgumentException("regionCode is required");
+        }
+
+        if (update.communeCode() == null) {
+            throw new IllegalArgumentException("communeCode is required");
+        }
+
+        return communeRepository.findActiveByCountryCodeAndRegionCodeAndCommuneCode(
+                        countryCode,
+                        update.regionCode(),
+                        update.communeCode()
+                )
+                .orElseThrow(() -> new IllegalArgumentException("commune not found"));
     }
 
     private void replaceServices(ProfileEntity profile, List<OfferedService> services) {
@@ -105,12 +135,8 @@ public class DefaultProfileService implements ProfileService {
         }
 
         services.forEach(service -> {
-            OfferedServiceEntity entity = new OfferedServiceEntity();
-            entity.setServiceId(service.serviceId());
+            OfferedServiceEntity entity = profileMapper.toEntity(service);
             entity.setProfile(profile);
-            entity.setName(service.name());
-            entity.setDescription(service.description());
-            entity.setActive(service.active());
             profile.getServices().add(entity);
         });
     }
@@ -126,55 +152,10 @@ public class DefaultProfileService implements ProfileService {
                 .collect(Collectors.toMap(OfferedServiceEntity::getServiceId, Function.identity()));
 
         rates.forEach(rate -> {
-            RateEntity entity = new RateEntity();
-            entity.setRateId(rate.rateId());
+            RateEntity entity = profileMapper.toEntity(rate);
             entity.setProfile(profile);
             entity.setService(rate.serviceId() == null ? null : servicesById.get(rate.serviceId()));
-            entity.setLabel(rate.label());
-            entity.setAmount(rate.amount());
-            entity.setCurrency(rate.currency());
-            entity.setDurationAmount(rate.durationAmount());
-            entity.setDurationUnit(rate.durationUnit());
-            entity.setDisplayOrder(rate.displayOrder());
-            entity.setActive(rate.active());
             profile.getRates().add(entity);
         });
-    }
-
-    private Profile toModel(ProfileEntity profile) {
-        return new Profile(
-                profile.getProfileId(),
-                profile.getUserId(),
-                profile.getDisplayName(),
-                profile.getDescription(),
-                profile.getAge(),
-                profile.getBirthDate(),
-                profile.getLocation(),
-                profile.getPublicationStatus(),
-                profile.getAgeVerificationStatus(),
-                profile.getStorageQuota(),
-                profile.getStorageUsed(),
-                profile.getServices().stream()
-                        .map(service -> new OfferedService(
-                                service.getServiceId(),
-                                service.getName(),
-                                service.getDescription(),
-                                service.isActive()
-                        ))
-                        .toList(),
-                profile.getRates().stream()
-                        .map(rate -> new Rate(
-                                rate.getRateId(),
-                                rate.getService() == null ? null : rate.getService().getServiceId(),
-                                rate.getLabel(),
-                                rate.getAmount(),
-                                rate.getCurrency(),
-                                rate.getDurationAmount(),
-                                rate.getDurationUnit(),
-                                rate.getDisplayOrder(),
-                                rate.isActive()
-                        ))
-                        .toList()
-        );
     }
 }

@@ -12,10 +12,14 @@ services:
       QUARKUS_PROFILE: docker
       JAVA_DEBUG: "true"
       JAVA_DEBUG_PORT: "*:8000"
+      PROFILE_HTTP_MAX_BODY_SIZE: ${PROFILE_HTTP_MAX_BODY_SIZE:-500M}
       PROFILE_FIXTURES_ENABLED: ${PROFILE_FIXTURES_ENABLED:-true}
-      PROFILE_MEDIA_STORAGE_PROVIDER: ${PROFILE_MEDIA_STORAGE_PROVIDER:-fake}
+      PROFILE_MEDIA_STORAGE_PROVIDER: ${PROFILE_MEDIA_STORAGE_PROVIDER:-local}
       PROFILE_MEDIA_FAKE_UPLOAD_BASE_URL: ${PROFILE_MEDIA_FAKE_UPLOAD_BASE_URL:-https://storage.local/upload}
+      PROFILE_MEDIA_LOCAL_STORAGE_PATH: ${PROFILE_MEDIA_LOCAL_STORAGE_PATH:-/deployments/storage/profile-media}
+      PROFILE_MEDIA_LOCAL_PUBLIC_BASE_URL: ${PROFILE_MEDIA_LOCAL_PUBLIC_BASE_URL:-http://localhost:9092/profile-service/media/files}
       PROFILE_MEDIA_UPLOAD_URL_TTL: ${PROFILE_MEDIA_UPLOAD_URL_TTL:-15m}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:8088,http://127.0.0.1:8088}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:8088,http://127.0.0.1:8088,http://localhost:8000,http://127.0.0.1:8000}
     volumes:
       - ${PWD}/db/profile.db:/deployments/profile.db
+      - ${PWD}/storage/profile-media:/deployments/storage/profile-media

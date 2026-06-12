@@ -17,7 +17,9 @@ public record ProfileRequestResource(
         String description,
         @Min(18) Integer age,
         LocalDate birthDate,
-        String location,
+        String countryCode,
+        String regionCode,
+        String communeCode,
         List<@Valid OfferedServiceResource> services,
         List<@Valid RateResource> rates
 ) {
@@ -28,7 +30,9 @@ public record ProfileRequestResource(
                 description,
                 age,
                 birthDate,
-                location,
+                countryCode,
+                regionCode,
+                communeCode,
                 services == null
                         ? List.of()
                         : services.stream().map(OfferedServiceResource::toOfferedService).toList(),

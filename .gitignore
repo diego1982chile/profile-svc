@@ -42,6 +42,7 @@ profile.db
 profile.db-*
 db/*.db
 db/*.db-*
+storage/
 
 # Plugin directory
 /.quarkus/cli/plugins/

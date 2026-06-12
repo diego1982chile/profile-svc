@@ -1,6 +1,7 @@
 package cl.dsoto.profile.config;
 
 import cl.dsoto.profile.entities.ProfileEntity;
+import cl.dsoto.profile.repositories.CommuneRepository;
 import cl.dsoto.profile.repositories.ProfileRepository;
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
@@ -21,18 +22,25 @@ public class ProfileFixtureInitializer {
                     "Camila Rojas",
                     "Perfil base creado desde fixture de onboarding.",
                     LocalDate.of(1996, 3, 12),
-                    "Santiago"
+                    "CL",
+                    "13",
+                    "13101"
             ),
             new FixtureProfile(
                     "provider.profile@example.com",
                     "Valentina Torres",
                     "Perfil base para pruebas locales de profile-service.",
                     LocalDate.of(1994, 6, 20),
-                    "Valparaiso"
+                    "CL",
+                    "05",
+                    "05101"
             )
     );
 
     private final ProfileRepository profileRepository;
+    private final CommuneRepository communeRepository;
+    @SuppressWarnings("unused")
+    private final LocationCatalogInitializer locationCatalogInitializer;
 
     @ConfigProperty(name = "profile.fixtures.enabled", defaultValue = "false")
     boolean fixturesEnabled;
@@ -40,8 +48,14 @@ public class ProfileFixtureInitializer {
     @ConfigProperty(name = "profile.media.default-storage-quota-bytes")
     Long defaultStorageQuota;
 
-    public ProfileFixtureInitializer(ProfileRepository profileRepository) {
+    public ProfileFixtureInitializer(
+            ProfileRepository profileRepository,
+            CommuneRepository communeRepository,
+            LocationCatalogInitializer locationCatalogInitializer
+    ) {
         this.profileRepository = profileRepository;
+        this.communeRepository = communeRepository;
+        this.locationCatalogInitializer = locationCatalogInitializer;
     }
 
     @PostConstruct
@@ -64,7 +78,11 @@ public class ProfileFixtureInitializer {
         profile.setDescription(fixture.description());
         profile.setBirthDate(fixture.birthDate());
         profile.setAge(ageFor(fixture.birthDate()));
-        profile.setLocation(fixture.location());
+        profile.setCommune(communeRepository.findActiveByCountryCodeAndRegionCodeAndCommuneCode(
+                fixture.countryCode(),
+                fixture.regionCode(),
+                fixture.communeCode()
+        ).orElseThrow(() -> new IllegalStateException("fixture commune not found")));
         profile.setStorageQuota(defaultStorageQuota);
 
         profileRepository.save(profile);
@@ -82,7 +100,9 @@ public class ProfileFixtureInitializer {
             String displayName,
             String description,
             LocalDate birthDate,
-            String location
+            String countryCode,
+            String regionCode,
+            String communeCode
     ) {
     }
 }

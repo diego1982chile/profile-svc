@@ -2,6 +2,7 @@ package cl.dsoto.profile.services.impl;
 
 import cl.dsoto.profile.entities.MediaEntity;
 import cl.dsoto.profile.entities.ProfileEntity;
+import cl.dsoto.profile.mappers.MediaMapper;
 import cl.dsoto.profile.model.Media;
 import cl.dsoto.profile.model.MediaStatus;
 import cl.dsoto.profile.model.MediaType;
@@ -27,6 +28,7 @@ public class DefaultMediaService implements MediaService {
     private final ProfileRepository profileRepository;
     private final MediaRepository mediaRepository;
     private final MediaStorageService mediaStorageService;
+    private final MediaMapper mediaMapper;
 
     @ConfigProperty(name = "profile.media.max-photos")
     Long maxPhotos;
@@ -37,11 +39,13 @@ public class DefaultMediaService implements MediaService {
     public DefaultMediaService(
             ProfileRepository profileRepository,
             MediaRepository mediaRepository,
-            MediaStorageService mediaStorageService
+            MediaStorageService mediaStorageService,
+            MediaMapper mediaMapper
     ) {
         this.profileRepository = profileRepository;
         this.mediaRepository = mediaRepository;
         this.mediaStorageService = mediaStorageService;
+        this.mediaMapper = mediaMapper;
     }
 
     @Override
@@ -97,7 +101,7 @@ public class DefaultMediaService implements MediaService {
         profile.setStorageUsed(profile.getStorageUsed() + storedObject.fileSize());
         profileRepository.save(profile);
 
-        return toModel(mediaRepository.save(media));
+        return mediaMapper.toModel(mediaRepository.save(media));
     }
 
     @Override
@@ -113,7 +117,7 @@ public class DefaultMediaService implements MediaService {
                         MediaEntity::getDisplayOrder,
                         Comparator.nullsLast(Integer::compareTo)
                 ))
-                .map(this::toModel)
+                .map(mediaMapper::toModel)
                 .toList();
     }
 
@@ -201,17 +205,4 @@ public class DefaultMediaService implements MediaService {
         return "profiles/" + profile.getProfileId() + "/";
     }
 
-    private Media toModel(MediaEntity media) {
-        return new Media(
-                media.getMediaId(),
-                media.getProfile().getProfileId(),
-                media.getMediaType(),
-                media.getMediaStatus(),
-                media.getObjectKey(),
-                media.getFileSize(),
-                media.getDisplayOrder(),
-                media.isPrimaryMedia(),
-                media.getUploadedAt()
-        );
-    }
 }
