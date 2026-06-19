@@ -9,7 +9,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static java.util.Map.entry;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 
 @QuarkusTest
@@ -104,6 +106,83 @@ class DefaultProfileWebServiceTest {
                 .body("commune.name", is("Valparaíso"))
                 .body("services", hasSize(2))
                 .body("rates", hasSize(1));
+    }
+
+    @Test
+    void shouldUpdateExtendedPublicProfileData() {
+        String userId = userId();
+        createProfile(userId, "Provider Extended Before");
+
+        given()
+                .contentType("application/json")
+                .header("X-User-Id", userId)
+                .body(Map.ofEntries(
+                        entry("displayName", "Provider Extended"),
+                        entry("description", "Extended profile description"),
+                        entry("age", 28),
+                        entry("countryCode", "CL"),
+                        entry("regionCode", "13"),
+                        entry("communeCode", "13101"),
+                        entry("details", Map.ofEntries(
+                                entry("contactPhone", "+56912345678"),
+                                entry("whatsappEnabled", true),
+                                entry("shortTitle", "Atención elegante y discreta"),
+                                entry("experience", "5 años de experiencia"),
+                                entry("rules", "Reservas con anticipación"),
+                                entry("heightCm", 168),
+                                entry("weightKg", 58),
+                                entry("measurements", "90-60-90"),
+                                entry("bodyType", "Delgada"),
+                                entry("hairColor", "Castaño"),
+                                entry("eyeColor", "Café"),
+                                entry("smokes", false),
+                                entry("tattoos", true),
+                                entry("piercings", false),
+                                entry("grooming", "Depilada"),
+                                entry("languages", "Español, Inglés")
+                        )),
+                        entry("availability", List.of(
+                                Map.of(
+                                        "dayOfWeek", "MONDAY",
+                                        "startTime", "10:00",
+                                        "endTime", "22:00",
+                                        "available", true,
+                                        "displayOrder", 1
+                                )
+                        )),
+                        entry("modalities", List.of("OWN_PLACE", "HOTEL", "OUTCALL")),
+                        entry("tags", List.of("Masajes", " Elegante ", "DISCRETA")),
+                        entry("services", List.of(
+                                Map.of("name", "Massage", "description", "Relax", "active", true)
+                        )),
+                        entry("rates", List.of(
+                                Map.of(
+                                        "label", "1 Hour",
+                                        "amount", new BigDecimal("90000"),
+                                        "currency", "CLP",
+                                        "durationAmount", 1,
+                                        "durationUnit", "HOURS",
+                                        "displayOrder", 1,
+                                        "active", true
+                                )
+                        ))
+                ))
+                .when()
+                .put("/profiles/me")
+                .then()
+                .statusCode(200)
+                .body("details.contactPhone", is("+56912345678"))
+                .body("details.whatsappEnabled", is(true))
+                .body("details.heightCm", is(168))
+                .body("availability", hasSize(1))
+                .body("availability[0].dayOfWeek", is("MONDAY"))
+                .body("availability[0].startTime", is("10:00:00"))
+                .body("modalities", hasSize(3))
+                .body("modalities", hasItem("HOTEL"))
+                .body("tags", hasSize(3))
+                .body("tags", hasItem("elegante"))
+                .body("completion.complete", is(false))
+                .body("completion.missingFields", hasItem("photo"));
     }
 
     @Test

@@ -15,6 +15,11 @@ public record Profile(
         AgeVerificationStatus ageVerificationStatus,
         Long storageQuota,
         Long storageUsed,
+        ProfileDetails details,
+        List<ProfileAvailabilitySlot> availability,
+        List<ServiceModality> modalities,
+        List<String> tags,
+        ProfileCompletion completion,
         List<OfferedService> services,
         List<Rate> rates
 ) {

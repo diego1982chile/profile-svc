@@ -8,6 +8,38 @@ in a separate session.
 The UI can be developed against `profile-service` without waiting for the full
 onboarding integration, real JWT authentication, or real cloud storage.
 
+## Current UI Session Context
+
+The latest resumed work was on the UI, using this repository as backend/API
+context and `docs/example-pdf.pdf` as the visual reference.
+
+Current UI agreement:
+
+- Keep the existing public/mobile profile screen as the visual reference and
+  visitor-facing view.
+- Build a separate editable version of that profile experience, preferably with
+  Oracle JET components for form controls.
+- The editor should save the full profile aggregate, including basic profile
+  fields, normalized commune location, extended details, availability,
+  modalities, tags, services, and rates.
+- Do not add backend fields prematurely for data that can be mocked in the
+  visitor-facing public profile.
+
+The PDF reference is a tall mobile public profile page. Important layout cues:
+
+- Compact top bar with navigation/action icons.
+- Provider identity block with circular avatar, display name, location/status
+  metadata, and social/contact action buttons.
+- Dense three-column media grid with many profile photos.
+- Content sections below the gallery: about, working hours, services, location,
+  experience/reviews, and footer/support content.
+- Mobile-first spacing and typography; desktop can center the mobile page or
+  expand the same content carefully without changing the hierarchy.
+
+For backend integration, use the contracts below. For the public profile screen,
+mock any data that is not yet exposed by `profile-service` rather than adding
+backend fields prematurely.
+
 ## Current Backend Base
 
 `profile-service` runs with:
@@ -51,6 +83,8 @@ provider.profile@example.com
 ```
 
 These represent profile/onboarding fixture users, not identity admin users.
+They include extended public-profile data such as details, availability,
+modalities, tags, services, and rates. Media still depends on local uploads.
 
 ## Profile Contract
 
@@ -285,6 +319,10 @@ Build the actual profile management UI first:
 
 - Load current fixture profile with `GET /profiles/me`.
 - Edit display name, description, birth date, age, and location.
+- Edit extended profile details such as contact phone, WhatsApp, short title,
+  experience, rules, physical attributes, grooming, languages, and personal
+  traits.
+- Edit weekly availability slots, service modalities, and public tags.
 - Manage offered services.
 - Manage rates.
 - Request/confirm fake media uploads.

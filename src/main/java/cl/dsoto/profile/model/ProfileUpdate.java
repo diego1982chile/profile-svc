@@ -11,6 +11,10 @@ public record ProfileUpdate(
         String countryCode,
         String regionCode,
         String communeCode,
+        ProfileDetails details,
+        List<ProfileAvailabilitySlot> availability,
+        List<ServiceModality> modalities,
+        List<String> tags,
         List<OfferedService> services,
         List<Rate> rates
 ) {

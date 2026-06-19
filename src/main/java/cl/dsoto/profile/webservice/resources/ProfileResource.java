@@ -3,10 +3,14 @@ package cl.dsoto.profile.webservice.resources;
 import cl.dsoto.profile.model.AgeVerificationStatus;
 import cl.dsoto.profile.model.DurationUnit;
 import cl.dsoto.profile.model.Profile;
+import cl.dsoto.profile.model.ProfileCompletion;
+import cl.dsoto.profile.model.ServiceModality;
 import cl.dsoto.profile.model.PublicationStatus;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public record ProfileResource(
@@ -21,6 +25,11 @@ public record ProfileResource(
         AgeVerificationStatus ageVerificationStatus,
         Long storageQuota,
         Long storageUsed,
+        ProfileDetailsResource details,
+        List<AvailabilitySlotResource> availability,
+        List<ServiceModality> modalities,
+        List<String> tags,
+        ProfileCompletion completion,
         List<OfferedServiceResource> services,
         List<RateResource> rates
 ) {
@@ -38,6 +47,13 @@ public record ProfileResource(
                 profile.ageVerificationStatus(),
                 profile.storageQuota(),
                 profile.storageUsed(),
+                profile.details() == null ? null : ProfileDetailsResource.from(profile.details()),
+                profile.availability().stream()
+                        .map(AvailabilitySlotResource::from)
+                        .toList(),
+                profile.modalities(),
+                profile.tags(),
+                profile.completion(),
                 profile.services().stream()
                         .map(service -> new OfferedServiceResource(
                                 service.serviceId(),
@@ -60,6 +76,68 @@ public record ProfileResource(
                         ))
                         .toList()
         );
+    }
+
+    public record ProfileDetailsResource(
+            String contactPhone,
+            Boolean whatsappEnabled,
+            String shortTitle,
+            String experience,
+            String rules,
+            Integer heightCm,
+            Integer weightKg,
+            String measurements,
+            String bodyType,
+            String hairColor,
+            String eyeColor,
+            Boolean smokes,
+            Boolean tattoos,
+            Boolean piercings,
+            String grooming,
+            String languages
+    ) {
+
+        static ProfileDetailsResource from(cl.dsoto.profile.model.ProfileDetails details) {
+            return new ProfileDetailsResource(
+                    details.contactPhone(),
+                    details.whatsappEnabled(),
+                    details.shortTitle(),
+                    details.experience(),
+                    details.rules(),
+                    details.heightCm(),
+                    details.weightKg(),
+                    details.measurements(),
+                    details.bodyType(),
+                    details.hairColor(),
+                    details.eyeColor(),
+                    details.smokes(),
+                    details.tattoos(),
+                    details.piercings(),
+                    details.grooming(),
+                    details.languages()
+            );
+        }
+    }
+
+    public record AvailabilitySlotResource(
+            String availabilitySlotId,
+            DayOfWeek dayOfWeek,
+            LocalTime startTime,
+            LocalTime endTime,
+            Boolean available,
+            Integer displayOrder
+    ) {
+
+        static AvailabilitySlotResource from(cl.dsoto.profile.model.ProfileAvailabilitySlot slot) {
+            return new AvailabilitySlotResource(
+                    slot.availabilitySlotId(),
+                    slot.dayOfWeek(),
+                    slot.startTime(),
+                    slot.endTime(),
+                    slot.available(),
+                    slot.displayOrder()
+            );
+        }
     }
 
     public record OfferedServiceResource(

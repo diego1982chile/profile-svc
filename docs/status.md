@@ -5,6 +5,21 @@
 `profile-service` is a Quarkus service for provider profile management and
 profile media metadata.
 
+The latest active work resumed from this repository is UI work, not backend
+publication work. The UI session uses `docs/example-pdf.pdf` as the visual
+reference for a mobile-first public provider profile page.
+
+Current agreement:
+
+- Keep the current public/mobile profile UI as the visual and structural base.
+- Build a separate editable profile UI version from that base, using Oracle JET
+  form components where they fit naturally.
+- The editable UI must update the extended profile contract now exposed by this
+  service: `details`, `availability`, `modalities`, `tags`, services, rates,
+  location, and basic profile fields.
+- Do not switch focus to publication, JWT, S3, onboarding integration, or
+  discovery before this editable profile flow is usable.
+
 The repository is initialized and pushed to:
 
 ```text
@@ -38,6 +53,12 @@ Profiles currently support:
 
 - Basic public data: `displayName`, `description`, `age`, `birthDate`,
   `commune`.
+- Extended public details: contact/WhatsApp, short title, experience, rules,
+  physical attributes, grooming, languages, and personal traits.
+- Weekly availability slots.
+- Service modalities: `OWN_PLACE`, `HOTEL`, `OUTCALL`, `ONLINE`, `TO_AGREE`.
+- Public tags.
+- Computed profile completion with percentage and missing fields.
 - Publication status: `DRAFT`, `PUBLISHED`, `SUSPENDED`.
 - Age verification status: `NOT_STARTED`, `PENDING`, `VERIFIED`, `REJECTED`.
 - Storage quota and usage.
@@ -109,6 +130,9 @@ Fixture users:
 provider.basic@example.com
 provider.profile@example.com
 ```
+
+Both fixture profiles are enriched with extended profile details, availability
+slots, service modalities, public tags, offered services, and rates.
 
 The current authentication placeholder is:
 
@@ -193,7 +217,7 @@ http://127.0.0.1:8088
 Current test suite:
 
 ```text
-10 tests
+15 tests
 0 failures
 0 errors
 ```
@@ -211,6 +235,8 @@ Covered behavior:
 - Photo count limit.
 - Storage quota limit.
 - User without profile rejection for media upload.
+- Extended profile details, availability, modalities, tags, and completion
+  response.
 
 ## Known Gaps
 
@@ -220,7 +246,6 @@ Covered behavior:
 - Binary upload is not performed while using fake storage.
 - `publish` and `unpublish` endpoints are not implemented.
 - Publication rules are not implemented.
-- Profile completion status is not implemented.
 - Profile completion event/contract for onboarding is not implemented.
 - Subscription integration is not implemented.
 - Age verification integration is not implemented.
@@ -229,18 +254,23 @@ Covered behavior:
 
 ## Next Steps
 
-1. Build the profile UI against the current backend contract.
+1. Continue the profile UI work against the current backend contract.
    - Use `docs/profile-ui-context.md` as the UI session context.
+   - Use `docs/example-pdf.pdf` as the visual reference.
+   - The reference is a mobile public profile layout with compact header,
+     avatar/profile identity, action buttons, photo grid, about section,
+     working hours, services, location, experience/reviews, and footer content.
+   - Create an editable version of the current profile UI rather than replacing
+     the visitor/mobile profile view.
+   - Prefer Oracle JET inputs, text areas, switches, selects, and editable rows
+     for profile fields, contact data, attributes, availability, modalities,
+     tags, services, and rates.
    - Use `X-User-Id` for fixture user selection.
-   - Skip actual binary PUT while storage provider is `fake`.
+   - In dev/local storage mode, perform the binary `PUT` to the upload URL
+     before `POST /media/confirm`.
+   - Skip actual binary `PUT` only if storage provider is `fake`.
 
-2. Add profile completion semantics.
-   - Define what fields make a profile complete.
-   - Add a `profileStatus` or equivalent model.
-   - Add tests for incomplete vs complete profiles.
-   - Prepare a `ProfileCompleted` event or service contract for onboarding.
-
-3. Implement publication.
+2. Implement publication.
    - Add:
      ```http
      POST /profiles/me/publish
@@ -249,15 +279,16 @@ Covered behavior:
    - Validate profile completeness.
    - Validate required media.
    - Validate age verification status when the final rule is decided.
+   - Prepare a `ProfileCompleted` event or service contract for onboarding.
 
-4. Replace fake storage with a real provider implementation.
+3. Replace fake storage with a real provider implementation.
    - Add `S3MediaStorageService` behind `MediaStorageService`.
    - Support upload intent with S3 pre-signed PUT URL.
    - Support object metadata lookup.
    - Support object deletion.
    - Consider LocalStack for local integration tests.
 
-5. Replace `X-User-Id` with JWT-based identity.
+4. Replace `X-User-Id` with JWT-based identity.
    - Align with `token-svc` issuer/audience.
    - Use JWT subject as `userId`.
    - Add role/scope checks where needed.
